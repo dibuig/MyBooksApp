@@ -31,8 +31,8 @@
 		    android:layout_height="wrap_content"
 		    >
 		    <Button 
-		      android:id="@+id/roulette_button" 
-		      android:text="Roulette" 
+		      android:id="@+id/ebooks_button" 
+		      android:text="Get Ebooks" 
 		      android:layout_width="fill_parent"
 		      android:layout_height="wrap_content"
 	          android:layout_weight="1"

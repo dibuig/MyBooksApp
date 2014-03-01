@@ -18,12 +18,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dropbox.client2.DropboxAPI;
@@ -42,28 +42,26 @@ public class MainActivity extends Activity {
 	final static private String ACCOUNT_PREFS_NAME = "prefs";
 	final static private String ACCESS_KEY_NAME = "ACCESS_KEY";
 	final static private String ACCESS_SECRET_NAME = "ACCESS_SECRET";
-
+	
+	public static String downloadPath;
 	DropboxAPI<AndroidAuthSession> mApi;
 
 	private boolean mLoggedIn = false;
 
-	// private Button loginButton;
-
 	private static final boolean USE_OAUTH1 = false;
-
-	EditText user;
-	EditText pass;
-	TextView username;
-	TextView password;
+	
+	public static boolean updateListOrder = false;
 
 	// Android widgets
 	private Button mSubmit;
 	private LinearLayout mDisplay;
-	private Button mRoulette;
+	private Button getEbooks;
 
 	private ListView listView;
 
 	private final String MAIN_DIR = "/";
+	
+	public static boolean downloaded = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -101,11 +99,39 @@ public class MainActivity extends Activity {
 
 		// This is where a photo is displayed
 		listView = (ListView) findViewById(R.id.list_view);
+		listView.setLongClickable(true);
+		listView.setOnItemLongClickListener( new OnItemLongClickListener(){
+
+			@Override
+			public boolean onItemLongClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				String str = listView.getItemAtPosition(position).toString();
+				String path = null;
+				for(Entry entry :DownloadEbookList.thumbs){
+					if (entry.fileName().equals(str)){
+						path = entry.path;
+						break;
+					}
+				}
+
+				if (path != null){
+				DownloadEbook ebook = new DownloadEbook(
+						MainActivity.this, mApi, path, listView);
+				ebook.execute();
+				return true;
+				} else {
+					return false;
+				}
+					
+				
+			}
+			
+		} );
 
 		// This is the button to take a photo
-		mRoulette = (Button) findViewById(R.id.roulette_button);
+		getEbooks = (Button) findViewById(R.id.ebooks_button);
 
-		mRoulette.setOnClickListener(new OnClickListener() {
+		getEbooks.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 				DownloadEbookList download = new DownloadEbookList(
 						MainActivity.this, mApi, MAIN_DIR, listView);
@@ -124,6 +150,7 @@ public class MainActivity extends Activity {
 		super.onSaveInstanceState(outState);
 	}
 
+	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
 		menu.add("Settings");
@@ -146,13 +173,16 @@ public class MainActivity extends Activity {
 				// Store it locally in our app for later use
 				storeAuth(session);
 				setLoggedIn(true);
-				updateOrder();
+				if (updateListOrder){
+					updateOrder();
+				}
 			} catch (IllegalStateException e) {
 				showToast("Couldn't authenticate with Dropbox:"
 						+ e.getLocalizedMessage());
 				Log.i(TAG, "Error authenticating", e);
 			}
-		}
+		}		
+
 	}
 
 	private void updateOrder() {

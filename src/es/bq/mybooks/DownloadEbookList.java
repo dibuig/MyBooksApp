@@ -26,8 +26,6 @@
 
 package es.bq.mybooks;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import android.app.ProgressDialog;
@@ -63,18 +61,12 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
     private DropboxAPI<?> mApi;
     private String mPath;
     private ListView listView;
-//    private Drawable mDrawable;
-
-    private FileOutputStream mFos;
 
     private boolean mCanceled;
     private Long mFileLen;
     private String mErrorMsg;
 
     public static ArrayList<Entry> thumbs = new ArrayList<Entry>();
-    // Note that, since we use a single file name here for simplicity, you
-    // won't be able to use this code for two simultaneous downloads.
-    private final static String IMAGE_FILE_NAME = "dbroulette.png";
 
     public DownloadEbookList(Context context, DropboxAPI<?> api,
             String dropboxPath, ListView view) {
@@ -87,19 +79,10 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
 
         mDialog = new ProgressDialog(context);
         mDialog.setMessage("Downloading Ebook List");
-        mDialog.setButton("Cancel", new OnClickListener() {
+        mDialog.setButton(DialogInterface.BUTTON_NEGATIVE,"Cancel", new OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 mCanceled = true;
                 mErrorMsg = "Canceled";
-
-                // This will cancel the getThumbnail operation by closing
-                // its stream
-                if (mFos != null) {
-                    try {
-                        mFos.close();
-                    } catch (IOException e) {
-                    }
-                }
             }
         });
 
@@ -125,15 +108,6 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
                 return false;
             }
 
-            // Make a list of everything in it that we can get a thumbnail for
-//            ArrayList<Entry> thumbs = new ArrayList<Entry>();
-//            for (Entry ent: dirent.contents) {
-////                if (ent.thumbExists) {
-//            	if (!ent.isDir && ent.mimeType.equals("application/epub+zip")){
-//                    // Add it to the list of thumbs we can choose from
-//                    thumbs.add(ent);
-//                }
-//            }
             getEbooks(dirent);
 
             if (mCanceled) {
@@ -146,31 +120,10 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
                 return false;
             }
 
-//            // Now pick a random one
-//            int index = (int)(Math.random() * thumbs.size());
-//            Entry ent = thumbs.get(index);
-//            String path = ent.path;
-//            mFileLen = ent.bytes;
-
-
-//            String cachePath = mContext.getCacheDir().getAbsolutePath() + "/" + IMAGE_FILE_NAME;
-//            try {
-//                mFos = new FileOutputStream(cachePath);
-//            } catch (FileNotFoundException e) {
-//                mErrorMsg = "Couldn't create a local file to store the image";
-//                return false;
-//            }
-
-            // This downloads a smaller, thumbnail version of the file.  The
-            // API to download the actual file is roughly the same.
-//            mApi.getThumbnail(path, mFos, ThumbSize.BESTFIT_960x640,
-//                    ThumbFormat.JPEG, null);
             if (mCanceled) {
                 return false;
             }
 
-//            mDrawable = Drawable.createFromPath(cachePath);
-            // We must have a legitimate picture
             return true;
 
         } catch (DropboxUnlinkedException e) {
@@ -218,7 +171,7 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
         return false;
     }
     
-    private void getEbooks (Entry dirent){
+    private void getEbooks (Entry dirent) throws DropboxException{
     	for (Entry ent: dirent.contents) {
     		if (ent.isDir){
     			Entry newDir = null;
@@ -249,14 +202,13 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
         ArrayList<String> adapter = new ArrayList<String>();
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(mContext,android.R.layout.simple_list_item_1,adapter);
         if (result) {
-            // Set the image now that we have it
             listView.setAdapter(arrayAdapter);
             for (Entry entry: thumbs ){
             	adapter.add(entry.fileName());
             	arrayAdapter.notifyDataSetChanged();
             }
         } else {
-            // Couldn't download it, so show an error
+
             showToast(mErrorMsg);
         }
     }
