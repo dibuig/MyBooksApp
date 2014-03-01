@@ -21,23 +21,29 @@
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
         <activity
-      android:name="com.dropbox.client2.android.AuthActivity"
-      android:launchMode="singleTask"
-      android:configChanges="orientation|keyboard">
-      <intent-filter>
-        <!-- Change this to be db- followed by your app key -->
-        <data android:scheme="db-CHANGE_ME" />
-        <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.BROWSABLE"/>
-        <category android:name="android.intent.category.DEFAULT" />
-      </intent-filter>
-    </activity>
-    
+            android:name="com.dropbox.client2.android.AuthActivity"
+            android:configChanges="orientation|keyboard"
+            android:launchMode="singleTask" >
+            <intent-filter>
+
+                <!-- Change this to be db- followed by your app key -->
+                <data android:scheme="db-7ypz7b6r0flze8l" />
+
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.BROWSABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="es.bq.mybooks.PreferencesActivity"
+            android:label="@string/app_name" >
+        </activity>
     </application>
 
 </manifest>
