@@ -116,7 +116,7 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
 
             if (thumbs.size() == 0) {
                 // No thumbs in that directory
-                mErrorMsg = "No pictures in that directory";
+                mErrorMsg = "No ebooks in that directory";
                 return false;
             }
 

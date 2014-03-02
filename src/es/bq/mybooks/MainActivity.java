@@ -7,7 +7,6 @@ import java.util.Map;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.graphics.Color;
@@ -15,6 +14,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -42,14 +42,17 @@ public class MainActivity extends Activity {
 	final static private String ACCOUNT_PREFS_NAME = "prefs";
 	final static private String ACCESS_KEY_NAME = "ACCESS_KEY";
 	final static private String ACCESS_SECRET_NAME = "ACCESS_SECRET";
-	
+
+	public static final String PREF_ORDEN_FECHA = "PREF_ORDEN_FECHA";
+	public static final String PREF_ORDEN_NOMBRE = "PREF_ORDEN_NOMBRE";
+
 	public static String downloadPath;
 	DropboxAPI<AndroidAuthSession> mApi;
 
 	private boolean mLoggedIn = false;
 
 	private static final boolean USE_OAUTH1 = false;
-	
+
 	public static boolean updateListOrder = false;
 
 	// Android widgets
@@ -60,8 +63,10 @@ public class MainActivity extends Activity {
 	private ListView listView;
 
 	private final String MAIN_DIR = "/";
-	
+
 	public static boolean downloaded = false;
+
+	SharedPreferences prefs;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -86,7 +91,7 @@ public class MainActivity extends Activity {
 					// Start the remote authentication
 					if (USE_OAUTH1) {
 						mApi.getSession()
-						.startAuthentication(MainActivity.this);
+								.startAuthentication(MainActivity.this);
 					} else {
 						mApi.getSession().startOAuth2Authentication(
 								MainActivity.this);
@@ -100,33 +105,32 @@ public class MainActivity extends Activity {
 		// This is where a photo is displayed
 		listView = (ListView) findViewById(R.id.list_view);
 		listView.setLongClickable(true);
-		listView.setOnItemLongClickListener( new OnItemLongClickListener(){
+		listView.setOnItemLongClickListener(new OnItemLongClickListener() {
 
 			@Override
 			public boolean onItemLongClick(AdapterView<?> parent, View view,
 					int position, long id) {
 				String str = listView.getItemAtPosition(position).toString();
 				String path = null;
-				for(Entry entry :DownloadEbookList.thumbs){
-					if (entry.fileName().equals(str)){
+				for (Entry entry : DownloadEbookList.thumbs) {
+					if (entry.fileName().equals(str)) {
 						path = entry.path;
 						break;
 					}
 				}
 
-				if (path != null){
-				DownloadEbook ebook = new DownloadEbook(
-						MainActivity.this, mApi, path, listView);
-				ebook.execute();
-				return true;
+				if (path != null) {
+					DownloadEbook ebook = new DownloadEbook(MainActivity.this,
+							mApi, path, listView);
+					ebook.execute();
+					return true;
 				} else {
 					return false;
 				}
-					
-				
+
 			}
-			
-		} );
+
+		});
 
 		// This is the button to take a photo
 		getEbooks = (Button) findViewById(R.id.ebooks_button);
@@ -142,6 +146,8 @@ public class MainActivity extends Activity {
 		// Display the proper UI state if logged in or not
 		setLoggedIn(mApi.getSession().isLinked());
 
+		prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
 	}
 
 	@Override
@@ -153,8 +159,14 @@ public class MainActivity extends Activity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
-		menu.add("Settings");
+		// menu.add("Settings");
+		// return true;
+		MenuInflater inflater = getMenuInflater();
+
+		inflater.inflate(R.menu.menu, menu);
+
 		return true;
+
 	}
 
 	@Override
@@ -173,15 +185,13 @@ public class MainActivity extends Activity {
 				// Store it locally in our app for later use
 				storeAuth(session);
 				setLoggedIn(true);
-				if (updateListOrder){
-					updateOrder();
-				}
+				
 			} catch (IllegalStateException e) {
 				showToast("Couldn't authenticate with Dropbox:"
 						+ e.getLocalizedMessage());
 				Log.i(TAG, "Error authenticating", e);
 			}
-		}		
+		}
 
 	}
 
@@ -189,63 +199,74 @@ public class MainActivity extends Activity {
 		Context context = getApplicationContext();
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(context);
-		boolean ordenFecha = prefs.getBoolean(
-				PreferencesActivity.PREF_ORDEN_FECHA, false);
-		boolean ordenNombre = prefs.getBoolean(
-				PreferencesActivity.PREF_ORDEN_NOMBRE, false);
+		boolean ordenFecha = prefs.getBoolean(PREF_ORDEN_FECHA, false);
+		boolean ordenNombre = prefs.getBoolean(PREF_ORDEN_NOMBRE, false);
 
 		listView = (ListView) findViewById(R.id.list_view);
 		listView.setBackgroundColor(Color.BLACK);
-		if (ordenNombre) {
-			ArrayList<String> lista = new ArrayList<String>();
-			ArrayList<String> listaNombres = new ArrayList<String>();
-			ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(
-					context, android.R.layout.simple_list_item_1, listaNombres);
+		ArrayList<String> lista = new ArrayList<String>();
 
-			for (Entry entry : DownloadEbookList.thumbs) {
+		Map<String, String> libros = new HashMap<String, String>();
+		for (Entry entry : DownloadEbookList.thumbs) {
+			if (ordenNombre) {
 				lista.add(entry.fileName());
-			}
-			Collections.sort(lista);
-			listView.setAdapter(arrayAdapter);
-			for (String nombre : lista) {
-				listaNombres.add(nombre);
-				arrayAdapter.notifyDataSetChanged();
-			}
-		
-		} else if (ordenFecha) {
-			ArrayList<String> lista = new ArrayList<String>();
-			ArrayList<String> listaFecha = new ArrayList<String>();
-
-			ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(context,
-					android.R.layout.simple_list_item_1, listaFecha);
-//			SimpleDateFormat dateFormat = new SimpleDateFormat("ddd, dd mmm yyy hh:mm:ss",
-//					Locale.ENGLISH);
-			Map<String,String> libros = new HashMap<String,String>();
-			for (Entry entry : DownloadEbookList.thumbs) {
-//				Date fecha = null; //Thu, 27 Feb 2014 22:13:03 +0000
+			} else if (ordenFecha) {
 				libros.put(entry.modified, entry.fileName());
-//				fecha = dateFormat.parse(entry.modified);
+
 				lista.add(entry.modified);
 			}
-			
-			Collections.sort(lista);
+
+		}
+		if (ordenFecha) {
+			ArrayList<String> listaFecha = new ArrayList<String>();
+			ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(
+					context, android.R.layout.simple_list_item_1, listaFecha);
 			listView.setAdapter(arrayAdapter);
+			Collections.sort(lista);
 			for (String date : lista) {
 				listaFecha.add(libros.get(date));
 				arrayAdapter.notifyDataSetChanged();
 			}
 
+		} else if (ordenNombre) {
+			ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(
+					context, android.R.layout.simple_list_item_1, lista);
+			listView.setAdapter(arrayAdapter);
+			Collections.sort(lista);
+			arrayAdapter.notifyDataSetChanged();
 		}
+
+		//
+		// listView.setAdapter(arrayAdapter);
+		// for (String date : lista) {
+		// listaFecha.add(libros.get(date));
+		// arrayAdapter.notifyDataSetChanged();
+		// }
 
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 
-		Intent intent = new Intent(this, PreferencesActivity.class);
-		startActivity(intent);
+		// Intent intent = new Intent(this, PreferencesActivity.class);
+		// startActivity(intent);
+		//
+		// return super.onOptionsItemSelected(item);
+		Editor editor = prefs.edit();
+		switch (item.getItemId()) {
+		case R.id.item_order_name:
+			editor.putBoolean(PREF_ORDEN_FECHA, false);
+			editor.putBoolean(PREF_ORDEN_NOMBRE, true);
+			break;
+		case R.id.item_order_date:
+			editor.putBoolean(PREF_ORDEN_FECHA, true);
+			editor.putBoolean(PREF_ORDEN_NOMBRE, false);
+			break;
+		}
+		editor.commit();
+		updateOrder();
+		return true;
 
-		return super.onOptionsItemSelected(item);
 	}
 
 	private void logOut() {

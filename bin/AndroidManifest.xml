@@ -40,11 +40,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity
+        <!--activity
             android:name="es.bq.mybooks.PreferencesActivity"
             android:label="@string/app_name" >
-        </activity>
-                <activity
+        </activity> -->
+        <activity
             android:name="es.bq.mybooks.ShowCoverActivity"
             android:label="@string/app_name" >
         </activity>
