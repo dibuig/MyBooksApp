@@ -62,15 +62,12 @@ public class DownloadEbook extends AsyncTask<Void, Long, Boolean> {
 	private final ProgressDialog mDialog;
 	private DropboxAPI<?> mApi;
 	private String mPath;
-	// private ListView listView;
 
 	private FileOutputStream mFos;
 
 	private boolean mCanceled;
 	private Long mFileLen;
 	private String mErrorMsg;
-
-	// private final static String EBOOK_FILE_NAME = "ebook.epub";
 
 	public DownloadEbook(Context context, DropboxAPI<?> api,
 			String dropboxPath, ListView view) {
@@ -80,8 +77,7 @@ public class DownloadEbook extends AsyncTask<Void, Long, Boolean> {
 
 		mApi = api;
 		mPath = dropboxPath;
-		// listView = view;
-
+		// Cuadro de diálogo para indicar que estamos descargando la lista
 		mDialog = new ProgressDialog(context);
 		mDialog.setMessage("Downloading Ebook Cover");
 		mDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel",
@@ -109,7 +105,10 @@ public class DownloadEbook extends AsyncTask<Void, Long, Boolean> {
 			if (mCanceled) {
 				return false;
 			}
-			
+			// Descargamos el libro a la tarjeta SD. Otra opción sería
+			// almacenarlo en cache, y quizás con ese planteamiento fuese más
+			// ágil tanto la descarga como
+			// la posterior obtención de la portada
 			String sdPath = Environment.getExternalStorageDirectory().getPath()
 					+ "/" + mPath.substring(mPath.lastIndexOf("/"));
 
@@ -132,12 +131,6 @@ public class DownloadEbook extends AsyncTask<Void, Long, Boolean> {
 			}
 
 			MainActivity.downloadPath = sdPath;
-
-			Intent intent = new Intent(mContext, ShowCoverActivity.class);
-			intent.setDataAndType(Uri.parse("file://" + sdPath),
-					"application/epub+zip");
-			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			mContext.startActivity(intent);
 
 			return true;
 
@@ -217,12 +210,17 @@ public class DownloadEbook extends AsyncTask<Void, Long, Boolean> {
 	@Override
 	protected void onPostExecute(Boolean result) {
 		mDialog.dismiss();
+		// Una vez descargado lanzamos la actividad que nos mostrará la portada
+		// si el resultado a sido correcto
+		if (result) {
+			Intent intent = new Intent(mContext, ShowCoverActivity.class);
+			intent.setDataAndType(
+					Uri.parse("file://" + MainActivity.downloadPath),
+					"application/epub+zip");
+			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			mContext.startActivity(intent);
+		}
 
 	}
-
-	// private void showToast(String msg) {
-	// Toast error = Toast.makeText(mContext, msg, Toast.LENGTH_LONG);
-	// error.show();
-	// }
 
 }

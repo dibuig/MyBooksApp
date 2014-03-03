@@ -66,7 +66,7 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
     private Long mFileLen;
     private String mErrorMsg;
 
-    public static ArrayList<Entry> thumbs = new ArrayList<Entry>();
+    public static ArrayList<Entry> ebooks = new ArrayList<Entry>();
 
     public DownloadEbookList(Context context, DropboxAPI<?> api,
             String dropboxPath, ListView view) {
@@ -77,6 +77,7 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
         mPath = dropboxPath;
         listView = view;
 
+        //Cuadro de diálogo para indicar que estamos descargando la lista
         mDialog = new ProgressDialog(context);
         mDialog.setMessage("Downloading Ebook List");
         mDialog.setButton(DialogInterface.BUTTON_NEGATIVE,"Cancel", new OnClickListener() {
@@ -92,8 +93,8 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
     @Override
     protected Boolean doInBackground(Void... params) {
         try {
-        	if (thumbs.size() > 0){
-        		thumbs = new ArrayList<Entry>();
+        	if (ebooks.size() > 0){
+        		ebooks = new ArrayList<Entry>();
         	}
             if (mCanceled) {
                 return false;
@@ -108,13 +109,14 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
                 return false;
             }
 
+            //Metodo que obtiene los ebooks
             getEbooks(dirent);
 
             if (mCanceled) {
                 return false;
             }
 
-            if (thumbs.size() == 0) {
+            if (ebooks.size() == 0) {
                 // No thumbs in that directory
                 mErrorMsg = "No ebooks in that directory";
                 return false;
@@ -171,6 +173,18 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
         return false;
     }
     
+    /**
+     * Método recursivo que recupera los ebooks y los añade a la lista.
+     * 
+     * Al ser recursivo, recorre la cuenta completa de Dropbox del usuario, llamándose a sí mismo si el elemento que se inspecciona es un directorio, y de no ser así
+     * se comprueba si es un ebook (.epub) y se añade a la lista
+     * 
+     * De querer navegar solo por uno de los directorios (por ejemplo el raíz), habría que modificar este método para que no fuese recursivo  y solo recuperase los elementos
+     * de dicho directorio. Con eso se ganaría en eficiencia y rendimiento 
+     * 
+     * @param dirent directorio o archivo actual
+     * @throws DropboxException
+     */
     private void getEbooks (Entry dirent) throws DropboxException{
     	for (Entry ent: dirent.contents) {
     		if (ent.isDir){
@@ -183,8 +197,7 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
 				}
     			getEbooks(newDir);
     		} else if (ent.mimeType.equals("application/epub+zip")){
-              // Add it to the list of thumbs we can choose from
-              thumbs.add(ent);
+              ebooks.add(ent);
           }
       }
     }
@@ -198,12 +211,17 @@ public class DownloadEbookList extends AsyncTask<Void, Long, Boolean> {
     @Override
     protected void onPostExecute(Boolean result) {
         mDialog.dismiss();
+        //Ponemos color negro de fondo para que se vean los elementos.
+        //Por lo que he podido ver, es un bug del simple_list_item_1. 
+        //La solución no es muy elegante pero dado que se dice que no prestemos especial atención a la calidad gráfica, he optado por esta alternativa.
         listView.setBackgroundColor(Color.BLACK);
         ArrayList<String> adapter = new ArrayList<String>();
+        
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(mContext,android.R.layout.simple_list_item_1,adapter);
         if (result) {
+        	//Utilizamos arrayAdapter para notificar los cambios a la lista
             listView.setAdapter(arrayAdapter);
-            for (Entry entry: thumbs ){
+            for (Entry entry: ebooks ){
             	adapter.add(entry.fileName());
             	arrayAdapter.notifyDataSetChanged();
             }

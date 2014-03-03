@@ -4,11 +4,11 @@
     <item
         android:id="@+id/item_order_name"
 		android:showAsAction="never"
-        android:title="Order by name" />     
+        android:title="@string/order_name" />     
 
     <item
         android:id="@+id/item_order_date"
-        android:title="Order by date"
+        android:title="@string/order_date"
 		android:showAsAction="never" />
 
 </menu>

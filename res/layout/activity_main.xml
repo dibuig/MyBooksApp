@@ -7,7 +7,7 @@
 
     <Button 
       android:id="@+id/auth_button" 
-	  android:text="Link with Dropbox" 
+	  android:text="@string/link" 
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
 	  />
@@ -15,13 +15,13 @@
         android:id="@+id/logged_in_display" 
         android:orientation="vertical"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_height="0dp"
         android:layout_weight="1"
         >
 		<ListView  
           android:id="@+id/list_view" 
 		  android:layout_width="fill_parent" 
-		  android:layout_height="fill_parent" 
+		  android:layout_height="0dp" 
 		  android:layout_weight="1"
 		  android:textColor="@android:color/black"
 		  />
@@ -32,8 +32,8 @@
 		    >
 		    <Button 
 		      android:id="@+id/ebooks_button" 
-		      android:text="Get Ebooks" 
-		      android:layout_width="fill_parent"
+		      android:text="@string/get_ebooks" 
+		      android:layout_width="0dp"
 		      android:layout_height="wrap_content"
 	          android:layout_weight="1"
 		      />

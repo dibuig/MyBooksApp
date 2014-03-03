@@ -51,8 +51,6 @@ public class MainActivity extends Activity {
 
 	private boolean mLoggedIn = false;
 
-	private static final boolean USE_OAUTH1 = false;
-
 	public static boolean updateListOrder = false;
 
 	// Android widgets
@@ -77,7 +75,6 @@ public class MainActivity extends Activity {
 		AndroidAuthSession session = buildSession();
 		mApi = new DropboxAPI<AndroidAuthSession>(session);
 
-		// Basic Android widgets
 		setContentView(R.layout.activity_main);
 
 		mSubmit = (Button) findViewById(R.id.auth_button);
@@ -89,30 +86,30 @@ public class MainActivity extends Activity {
 					logOut();
 				} else {
 					// Start the remote authentication
-					if (USE_OAUTH1) {
-						mApi.getSession()
-								.startAuthentication(MainActivity.this);
-					} else {
 						mApi.getSession().startOAuth2Authentication(
 								MainActivity.this);
-					}
 				}
 			}
 		});
 
 		mDisplay = (LinearLayout) findViewById(R.id.logged_in_display);
 
-		// This is where a photo is displayed
+		//view to show the list of ebooks
 		listView = (ListView) findViewById(R.id.list_view);
 		listView.setLongClickable(true);
 		listView.setOnItemLongClickListener(new OnItemLongClickListener() {
 
+			//En las especificaciones del caso se pedía descargar la portada en doble click.
+			// Yo me he decantado por hacerlo de una forma más acorde con el uso de las interfaces Android, 
+			// utilizando los controles para click largo. En cualquier caso, para hacerlo mediante doble click, 
+			// habría que establecer un listener específico, que por falta de tiempo no he podido desarrollar
 			@Override
 			public boolean onItemLongClick(AdapterView<?> parent, View view,
 					int position, long id) {
 				String str = listView.getItemAtPosition(position).toString();
 				String path = null;
-				for (Entry entry : DownloadEbookList.thumbs) {
+				for (Entry entry : DownloadEbookList.ebooks) {
+					//Obtenemos el path al ebook seleccionado
 					if (entry.fileName().equals(str)) {
 						path = entry.path;
 						break;
@@ -120,6 +117,7 @@ public class MainActivity extends Activity {
 				}
 
 				if (path != null) {
+					//lanzamos en una tarea asíncrona la descarga del ebook para obtener su portada
 					DownloadEbook ebook = new DownloadEbook(MainActivity.this,
 							mApi, path, listView);
 					ebook.execute();
@@ -132,9 +130,9 @@ public class MainActivity extends Activity {
 
 		});
 
-		// This is the button to take a photo
 		getEbooks = (Button) findViewById(R.id.ebooks_button);
 
+		//Listener del boton de obtención que ebooks que lanza la descarga de los contenidos de Dropbox de forma asíncrona
 		getEbooks.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 				DownloadEbookList download = new DownloadEbookList(
@@ -152,19 +150,15 @@ public class MainActivity extends Activity {
 
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
-		// outState.putString("mCameraFileName", mCameraFileName);
 		super.onSaveInstanceState(outState);
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
+		//Creación del menu desplegable con las opciones definidas en el menu.xml
 		super.onCreateOptionsMenu(menu);
-		// menu.add("Settings");
-		// return true;
 		MenuInflater inflater = getMenuInflater();
-
 		inflater.inflate(R.menu.menu, menu);
-
 		return true;
 
 	}
@@ -195,6 +189,9 @@ public class MainActivity extends Activity {
 
 	}
 
+	/**
+	 * Función para actualizar el orden de los elementos de la lista de acuerdo con las preferencias de usuario 
+	 */
 	private void updateOrder() {
 		Context context = getApplicationContext();
 		SharedPreferences prefs = PreferenceManager
@@ -207,7 +204,8 @@ public class MainActivity extends Activity {
 		ArrayList<String> lista = new ArrayList<String>();
 
 		Map<String, String> libros = new HashMap<String, String>();
-		for (Entry entry : DownloadEbookList.thumbs) {
+		//Utilizamos listas, maps y arrayAdapters para notificar los cambios de orden a la listView
+		for (Entry entry : DownloadEbookList.ebooks) {
 			if (ordenNombre) {
 				lista.add(entry.fileName());
 			} else if (ordenFecha) {
@@ -236,22 +234,14 @@ public class MainActivity extends Activity {
 			arrayAdapter.notifyDataSetChanged();
 		}
 
-		//
-		// listView.setAdapter(arrayAdapter);
-		// for (String date : lista) {
-		// listaFecha.add(libros.get(date));
-		// arrayAdapter.notifyDataSetChanged();
-		// }
-
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-
-		// Intent intent = new Intent(this, PreferencesActivity.class);
-		// startActivity(intent);
-		//
-		// return super.onOptionsItemSelected(item);
+		//Al seleccionar una opción del menu, guardamos las nuevas preferencias y llamamos al metodo que actualiza el orden
+		//No sería necesario hacerlo a través de las preferencias de usuario, 
+		//se podría pasar directamente por parámetro el orden seleccionado ahorrando así tiempo y ganando en eficiencia.
+		//No se implementa por falta de tiempo.
 		Editor editor = prefs.edit();
 		switch (item.getItemId()) {
 		case R.id.item_order_name:
@@ -362,7 +352,6 @@ public class MainActivity extends Activity {
 
 	private AndroidAuthSession buildSession() {
 		AppKeyPair appKeyPair = new AppKeyPair(APP_KEY, APP_SECRET);
-
 		AndroidAuthSession session = new AndroidAuthSession(appKeyPair);
 		loadAuth(session);
 		return session;
